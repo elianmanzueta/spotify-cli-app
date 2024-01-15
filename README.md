@@ -1,1 +1,1 @@
-# spotify
+# spotify cli app
