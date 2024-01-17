@@ -1,13 +1,16 @@
 """os module provides lets us grab env variables."""
 import os
+import json
 import logging
 from typing_extensions import Annotated
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
+from spotipy.oauth2 import SpotifyOauthError
 from dotenv import load_dotenv
 import typer
-from rich import print
+from rich.console import Console
+from rich.logging import RichHandler
 
 
 class SpotifyClient:
@@ -15,68 +18,61 @@ class SpotifyClient:
     A wrapper class for interacting with the Spotify Web API using Spotipy.
     """
 
+    # Default values for time_range and limit
     DEFAULT_TIME_RANGE = "medium_term"
     DEFAULT_LIMIT = 20
 
     def __init__(self):
-        self.display_name = None
+        self.client_id = os.getenv("CLIENT_ID")
+        self.client_secret = os.getenv("CLIENT_SECRET")
+        self.redirect_uri = os.getenv("REDIRECT_URI")
+
+        # Use rich logger
+        self.log = logging.getLogger("rich")
+
+        # Test for .env
+        if not any([self.client_id, self.client_secret, self.redirect_uri]):
+            raise ValueError(
+                "Missing required environment variables for the Spotify API."
+            )
 
     def session_constructor(self, scope: str) -> spotipy.Spotify:
         """
-        Start a Spotify session.
+        Constructs a Spotify API session.
 
-        Reads environment variables for user credentials and redirect URI.
+        Reads environment variables for user credentials and the redirect URI.
 
-        :param scope: Scope of information shared
+        :param scope: Scope of information shared. Used for authorization purposes in the Spotify API.
         """
-
-        client_id = os.getenv("CLIENT_ID", None)
-        client_secret = os.getenv("CLIENT_SECRET", None)
-        redirect_uri = os.getenv("REDIRECT_URI", None)
 
         try:
             session = spotipy.Spotify(
                 auth_manager=SpotifyOAuth(
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    redirect_uri=redirect_uri,
+                    client_id=self.client_id,
+                    client_secret=self.client_secret,
+                    redirect_uri=self.redirect_uri,
                     scope=scope,
                 )
             )
         except SpotifyException as e:
-            logging.error("Spotify API Error: %s", e)
+            self.log.error("Exiting: Spotify API Error:\n%s", e)
+            raise typer.Exit(code=1)
+        except SpotifyOauthError as e:
+            self.log.error ("Exiting: OAuth Error:\n%s", e)
             raise typer.Exit(code=1)
         return session
 
     def current_user_information(self) -> dict:
         """
         Get the current user's user information.
-
-        {
-        'display_name': 'Eliandawg',
-        'external_urls': {'spotify': 'https://open.spotify.com/user/turmoilted'},
-        'href': 'https://api.spotify.com/v1/users/turmoilted',
-        'id': 'turmoilted',
-        'images': [
-            {'url': 'https://i.scdn.co/image/ab67757000003b823f51b6f12bb824b6d821a970', 'height': 64, 'width': 64},
-            {'url': 'https://i.scdn.co/image/ab6775700000ee853f51b6f12bb824b6d821a970', 'height': 300, 'width': 300}
-        ],
-        'type': 'user',
-        'uri': 'spotify:user:turmoilted',
-        'followers': {'href': None, 'total': 22}
-        }
         """
+
         scope = "user-top-read"
 
-        try:
-            session = self.session_constructor(scope)
-            user = session.current_user()
-        except SpotifyException as e:
-            logging.error("Spotify API Error %s", e)
-            raise typer.Exit(code=1)
-        else:
-            logging.info(user)
-            return user
+        session = self.session_constructor(scope)
+        user = session.current_user()
+        self.log.info(user)
+        return user
 
     def current_user_top_tracks(
         self, time_range: str = None, limit: int = None
@@ -96,27 +92,34 @@ class SpotifyClient:
         scope = "user-top-read"
 
         try:
-            # Create session and get user information and top tracks.
+            # Create session to get user information and top tracks.
             session = self.session_constructor(scope)
             user_info = self.current_user_information()
             display_name = user_info["display_name"]
             top_tracks = session.current_user_top_tracks(
                 time_range=time_range, limit=limit
             )
+            print(json.dumps(top_tracks, indent=4))
         except SpotifyException as e:
-            logging.error("Spotify API Error: %s", e)
+            self.log.error("Exiting: Spotify API Error:\n%s", e)
             raise typer.Exit(code=1)
-        else:
-            tracklist = []
-            for track in top_tracks["items"]:
-                song_name = track["name"]
-                artist_name = track["artists"][0]["name"]
-                tracklist.append(f"{song_name} - {artist_name}")
+        tracklist = []
+        for idx, track in enumerate(top_tracks["items"]):
+            song_name = track.get("name")
+            artists = track.get("artists")
+            artist = artists[0] if artists else {}
+            artist_name = artist.get("name", "Unknown Artist")
+            tracklist.append(
+                f"[bold green]{idx+1}[/bold green] - {song_name} by {artist_name}"
+            )
 
-            print(f"[green]{display_name}'s top songs:")
-            for track in tracklist:
-                print(track)
-            return tracklist
+        console.print(
+            f"[i][bold green]{display_name}'s[/bold green] top [bold green]{time_range}[/bold green] songs :musical_notes:\n",
+            highlight=False,
+        )
+        for track in tracklist:
+            console.print(track, highlight=False)
+        return tracklist
 
     def current_user_top_artists(
         self, time_range: str = None, limit: int = None
@@ -136,25 +139,62 @@ class SpotifyClient:
         scope = "user-top-read"
 
         try:
+            # Create a session to get user information and top tracks.
             session = self.session_constructor(scope)
+            user_info = self.current_user_information()
+            display_name = user_info["display_name"]
             top_artists = session.current_user_top_artists(
                 time_range=time_range, limit=limit
             )
         except SpotifyException as e:
-            logging.error("Spotify API Error: %s", e)
+            self.log.error("Exiting: Spotify API Error:\n%s", e)
             raise typer.Exit(code=1)
-        else:
-            for artist in top_artists["items"]:
-                artist_name = artist["name"]
-                artist_genres = artist["genres"]
-                print(f"{artist_name} - {", ".join(str(x) for x in artist_genres)}")
+        console.print(
+            f"[i][bold green]{display_name}'s[/bold green] top [bold green]{time_range}[/bold green] artists[/i] :musical_notes:\n",
+            highlight=False,
+        )
+        artistlist = []
+        for idx, artist in enumerate(top_artists["items"]):
+            artist_name = artist.get("name", "Unknown Artist")
+            artist_genres = artist.get("genres", "Unknown Genre")
+            if artist_genres:
+                genres = ", ".join(str(x) for x in artist_genres)
+            else:
+                genres = "No genres found"
+            console.print(
+                f"[bold green]{idx+1}[/bold green] - {artist_name} - {genres}",
+                highlight=False,
+            )
+            artistlist.append(
+                f"[bold green]{idx+1}[/bold green] - {artist_name} - {genres}"
+            )
+        return artistlist
 
 
-# Initialization
+# .env
 load_dotenv()
-# logging.basicConfig(level=logging.DEBUG)
+
+# Rich
+console = Console()
+
+# Typer
 app = typer.Typer()
+state = {"verbose": False}
+
+# Client object initialization
 client = SpotifyClient()
+
+
+# Logging
+@app.callback()
+def main(verbose: bool = False):
+    """
+    Set logging level. Default INFO.
+    """
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG, handlers=[RichHandler()])
+    else:
+        logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
 
 
 # Typer commands
