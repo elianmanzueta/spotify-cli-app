@@ -1,19 +1,46 @@
 import unittest
-from unittest.mock import patch
-from main import SpotifyClient  # Adjust the import as per your project structure
+from unittest.mock import patch, MagicMock
+from main import SpotifyClient
+
 
 class TestSpotifyClient(unittest.TestCase):
+    """
+    Test Class to test the SpotifyClient class.
+    """
 
-    @patch('main.SpotifyClient.session_constructor')
-    def test_current_user_top_tracks(self, mock_session):
-        # Mock the session constructor and Spotify API responses
-        mock_session.return_value.current_user_top_tracks.return_value = {'items': [{'name': 'Song1', 'artists': [{'name': 'Artist1'}]}]}
+    def setUp(self):
+        self.client = SpotifyClient()
+        self.mock_session = MagicMock()
+        # Patch instance method of SpotifyClient
+        self.patcher = patch.object(
+            self.client, "session_constructor", return_value=self.mock_session
+        )
+        self.patcher.start()
 
-        client = SpotifyClient()
-        result = client.current_user_top_tracks()
-        self.assertEqual(result, ['Song1 - Artist1'], f"{result} not ['Song1 - Artist1']")
+    def tearDown(self):
+        self.patcher.stop()
 
-# Add more test cases...
+    def test_current_user_top_tracks_returns_formatted_string(self):
+        """
+        Test the output of the current_user_top_tracks function.
+        """
+        self.mock_session.current_user_top_tracks.return_value = {
+            "items": [{"name": "Buddy Holly", "artists": [{"name": "Weezer"}]}]
+        }
 
-if __name__ == '__main__':
+        result = self.client.current_user_top_tracks()
+        self.assertEqual(result, ["[bold green]1[/bold green] - Buddy Holly by Weezer"])
+
+    def test_current_user_top_tracks_handles_empty_response(self):
+        """
+        Test current_user_top_tracks with an empty API response.
+        """
+        # Configure the mock to return an empty list
+        self.mock_session.current_user_top_tracks.return_value = {"items": []}
+
+        result = self.client.current_user_top_tracks()
+        self.assertEqual(result, [])  # Expect an empty list as a result
+
+
+if __name__ == "__main__":
     unittest.main()
