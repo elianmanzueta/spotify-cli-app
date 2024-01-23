@@ -1,13 +1,15 @@
-"""os module provides lets us grab env variables."""
+"""Spotify CLI App"""
 import os
 import logging
 from typing_extensions import Annotated
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.exceptions import SpotifyException
 from dotenv import load_dotenv
 import typer
-from rich import print
+from rich.console import Console
+from rich.logging import RichHandler
 
 
 class SpotifyClient:
@@ -15,159 +17,341 @@ class SpotifyClient:
     A wrapper class for interacting with the Spotify Web API using Spotipy.
     """
 
+    # Default values for time ranges.
+    VALID_TIME_RANGES = ["short_term", "medium_term", "long_term"]
     DEFAULT_TIME_RANGE = "medium_term"
-    DEFAULT_LIMIT = 20
+
+    # Default value for result limits.
+    DEFAULT_RESULT_LIMIT = 20
+    MAX_RESULT_LIMIT = 50
 
     def __init__(self):
-        self.display_name = None
+        self.client_id = os.getenv("CLIENT_ID")
+        self.client_secret = os.getenv("CLIENT_SECRET")
+        self.redirect_uri = os.getenv("REDIRECT_URI")
+        self._user_scope = None
+        self._user_session = None
+        self._client_session = None
 
-    def session_constructor(self, scope: str) -> spotipy.Spotify:
+        # Use rich logger.
+        self.log = logging.getLogger("rich")
+
+    def authenticate(self, scope: str = None) -> spotipy.Spotify:
         """
-        Start a Spotify session.
+        Create a Spotify client.
 
-        Reads environment variables for user credentials and redirect URI.
+        Args:
+            scope (str, optional): The scope of the user authorization process. Defaults to None.
 
-        :param scope: Scope of information shared
+        Returns:
+            spotipy.Spotify: A Spotify client.
         """
-
-        client_id = os.getenv("CLIENT_ID", None)
-        client_secret = os.getenv("CLIENT_SECRET", None)
-        redirect_uri = os.getenv("REDIRECT_URI", None)
-
-        try:
-            session = spotipy.Spotify(
-                auth_manager=SpotifyOAuth(
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    redirect_uri=redirect_uri,
-                    scope=scope,
+        if scope:
+            # User authentication
+            if self._user_scope != scope:
+                self._user_session = spotipy.Spotify(
+                    auth_manager=SpotifyOAuth(
+                        client_id=self.client_id,
+                        client_secret=self.client_secret,
+                        redirect_uri=self.redirect_uri,
+                        scope=scope,
+                    )
                 )
+                self._user_scope = scope
+            return self._user_session
+        # Client credential authentication
+        if self._client_session is None:
+            client_credentials_manager = SpotifyClientCredentials(
+                client_id=self.client_id, client_secret=self.client_secret
             )
-        except SpotifyException as e:
-            logging.error("Spotify API Error: %s", e)
-            raise typer.Exit(code=1)
-        return session
+            self._client_session = spotipy.Spotify(
+                client_credentials_manager=client_credentials_manager
+            )
+        return self._client_session
 
-    def current_user_information(self) -> dict:
+    def validate_time_range_and_limit(self, time_range: str = None, limit: int = None):
         """
-        Get the current user's user information.
+        Validates the user's input for time_range and limit.
 
-        {
-        'display_name': 'Eliandawg',
-        'external_urls': {'spotify': 'https://open.spotify.com/user/turmoilted'},
-        'href': 'https://api.spotify.com/v1/users/turmoilted',
-        'id': 'turmoilted',
-        'images': [
-            {'url': 'https://i.scdn.co/image/ab67757000003b823f51b6f12bb824b6d821a970', 'height': 64, 'width': 64},
-            {'url': 'https://i.scdn.co/image/ab6775700000ee853f51b6f12bb824b6d821a970', 'height': 300, 'width': 300}
-        ],
-        'type': 'user',
-        'uri': 'spotify:user:turmoilted',
-        'followers': {'href': None, 'total': 22}
-        }
+        Args:
+            time_range (str): Time range of results. Defaults to None.
+            limit (int): The amount of results shown. Defaults to None.
+
+        Raises:
+            ValueError: If time_range is not valid.
+            ValueError: If limit is not valid.
         """
+
+        if time_range is not None and time_range not in self.VALID_TIME_RANGES:
+            raise ValueError(
+                f"Invalid time range: {time_range}. Valid options: {', '.join(self.VALID_TIME_RANGES)}"
+            )
+        if limit is not None and (limit > self.MAX_RESULT_LIMIT or limit <= 0):
+            raise ValueError(
+                f"Invalid limit {limit}. Limit must be between 1 and {self.MAX_RESULT_LIMIT} "
+            )
+
+    def current_user_display_name(self) -> str:
+        """
+        Get the current user's display name.
+        """
+
         scope = "user-top-read"
 
-        try:
-            session = self.session_constructor(scope)
-            user = session.current_user()
-        except SpotifyException as e:
-            logging.error("Spotify API Error %s", e)
-            raise typer.Exit(code=1)
-        else:
-            logging.info(user)
-            return user
+        session = self.authenticate(scope)
+        user = session.current_user()
+        return user["display_name"]
+
+    def top_prompt(self, time_range: str, prompt_type: str):
+        """
+        Used to control what is shown in the first line of the top_tracks and top_artists functions.
+
+        Args:
+            time_range (str, optional): Time range of results. Defaults to None.
+            prompt_type (str, optional): Type of prompt (artists, tracks). Defaults to None.
+        """
+
+        display_name = self.current_user_display_name()
+
+        if time_range == "short_term":
+            console.print(
+                f"[i]Displaying [bold green]{display_name}'s[/bold green] top {prompt_type} in the last month!\n[/i]",
+                justify="center",
+            )
+        elif time_range == "medium_term":
+            console.print(
+                f"[i]Displaying [bold green]{display_name}'s[/bold green] top {prompt_type} in the last six months!\n[/i]",
+                justify="center",
+            )
+        elif time_range == "long_term":
+            console.print(
+                f"[i]Displaying [bold green]{display_name}'s[/bold green] top {prompt_type} of all time!\n[/i]",
+                justify="center",
+            )
+
+    def get_track_duration(
+        self, authentication: spotipy.Spotify, track_uris: list
+    ) -> list:
+        """
+        Gets a given track's duration.
+
+        Args:
+            authentication (spotipy.Spotify): Spotify API Client
+            track_uri (list): A list of track URIs.
+
+        Returns:
+            list: Returns a list of track durations in milliseconds.
+        """
+
+        tracks = authentication.tracks(track_uris)
+        track_duration_list = []
+
+        for track in tracks["tracks"]:
+            track_duration_list.append(track["duration_ms"])
+        return track_duration_list
+
+    def ms_to_minutes_and_seconds(self, track_durations: list):
+        """
+        Used to convert a given track's duration (ms) to format seconds:minutes.
+
+        Args:
+            track_durations (list): A list of track durations in milliseconds.
+
+        Returns:
+           list: Returns a list of formatted track durations.
+        """
+
+        track_durations_in_minutes = []
+
+        for duration in track_durations:
+            total_seconds = int(duration / 1000)
+
+            minutes = total_seconds // 60
+            seconds = total_seconds % 60
+
+            track_durations_in_minutes.append(f"{minutes}:{str(seconds).zfill(2)}")
+
+        return track_durations_in_minutes
 
     def current_user_top_tracks(
         self, time_range: str = None, limit: int = None
     ) -> list:
         """
-        Get the current user's top tracks.
+        Gets the user's top tracks.
 
-        :param time_range: The time range to consider for top tracks.
-        :param limit: The number of tracks to return.
-        :return: List of top tracks.
+        Args:
+            time_range (str, optional): The time range of the results. Defaults to DEFAULT_TIME_RANGE.
+            limit (int, optional): The amount of results shown. Defaults to DEFAULT_RESULT_LIMIT.
+
+        Raises:
+            typer.Exit: Raised if the Spotify API returns an exception.
+
+        Returns:
+            list: Returns a list of the user's top tracks.
         """
+
+        self.validate_time_range_and_limit(time_range, limit)
 
         # Use class defaults if no value is provided
         time_range = time_range if time_range is not None else self.DEFAULT_TIME_RANGE
-        limit = limit if limit is not None else self.DEFAULT_LIMIT
+        limit = limit if limit is not None else self.DEFAULT_RESULT_LIMIT
 
         scope = "user-top-read"
 
         try:
-            # Create session and get user information and top tracks.
-            session = self.session_constructor(scope)
-            user_info = self.current_user_information()
-            display_name = user_info["display_name"]
+            # Create a session to get the user's information and their top tracks.
+            session = self.authenticate(scope)
             top_tracks = session.current_user_top_tracks(
                 time_range=time_range, limit=limit
             )
         except SpotifyException as e:
-            logging.error("Spotify API Error: %s", e)
+            self.log.error("Exiting: Spotify API Error:\n\n%s", e)
             raise typer.Exit(code=1)
-        else:
-            tracklist = []
-            for track in top_tracks["items"]:
-                song_name = track["name"]
-                artist_name = track["artists"][0]["name"]
-                tracklist.append(f"{song_name} - {artist_name}")
 
-            print(f"[green]{display_name}'s top songs:")
-            for track in tracklist:
-                print(track)
-            return tracklist
+        # Iterate through "items" to extract the song name and artist name.
+        track_uri_list = []
+        tracklist = []
+        for idx, track in enumerate(top_tracks["items"]):
+            track_name = track.get("name")
+            track_uri = track.get("uri")
+            track_uri_list.append(track_uri)
+            artist_name = track["artists"][0]["name"]
+            tracklist.append(
+                f"[bold green]{idx+1}[/bold green] - {track_name} by {artist_name}"
+            )
+
+        # Get track duration
+        track_durations_in_ms = self.get_track_duration(session, track_uri_list)
+        track_duration_in_minutes = self.ms_to_minutes_and_seconds(
+            track_durations_in_ms
+        )
+
+        # User output
+        self.top_prompt(time_range, "songs")
+        for idx, track in enumerate(tracklist):
+            console.print(
+                f"{track} ({track_duration_in_minutes[idx]})", justify="center"
+            )
 
     def current_user_top_artists(
         self, time_range: str = None, limit: int = None
     ) -> list:
         """
-        Get the current user's top artists.
+        Gets the user's top artists.
 
-        :param time_range: The time range to consider for top artists.
-        :param limit: The number of artists to return.
-        :return: List of top artists.
+        Args:
+            time_range (str, optional): The time range of the results. Defaults to DEFAULT_TIME_RANGE.
+            limit (int, optional): The amount of results shown. Defaults to DEFAULT_RESULT_LIMIT.
+
+        Raises:
+            typer.Exit: Raised if the Spotify API returns an exception.
+
+        Returns:
+            list: Returns a lists of artists and their associated genres.
         """
+
+        self.validate_time_range_and_limit(time_range, limit)
 
         # Use class defaults if no value is provided
         time_range = time_range if time_range is not None else self.DEFAULT_TIME_RANGE
-        limit = limit if limit is not None else self.DEFAULT_LIMIT
+        limit = limit if limit is not None else self.DEFAULT_RESULT_LIMIT
 
         scope = "user-top-read"
 
         try:
-            session = self.session_constructor(scope)
+            # Create a session to get user information and top tracks.
+            session = self.authenticate(scope)
             top_artists = session.current_user_top_artists(
                 time_range=time_range, limit=limit
             )
         except SpotifyException as e:
-            logging.error("Spotify API Error: %s", e)
+            self.log.error("Exiting: Spotify API Error:\n\n%s", e)
             raise typer.Exit(code=1)
-        else:
-            for artist in top_artists["items"]:
-                artist_name = artist["name"]
-                artist_genres = artist["genres"]
-                print(f"{artist_name} - {", ".join(str(x) for x in artist_genres)}")
+
+        self.top_prompt(time_range, "artists")
+        artistlist = []
+
+        # Iterate through "items" to extract the artist name and their genres.
+        for idx, artist in enumerate(top_artists["items"]):
+            artist_name = artist.get("name", "Unknown Artist")
+            artist_genres = artist.get("genres", "Unknown Genre")
+            if artist_genres:
+                genres = ", ".join(str(x) for x in artist_genres)
+            else:
+                # Sometimes an artist will have no genres listed.
+                genres = "No genres found"
+            console.print(
+                f"[bold green]{idx+1}[/bold green] - {artist_name} - {genres}",
+                justify="center",
+            )
+            artistlist.append(
+                f"[bold green]{idx+1}[/bold green] - {artist_name} - {genres}"
+            )
+        return artistlist
+
+    def search_spotify(
+        self,
+        query: str,
+        authentication: spotipy.Spotify,
+        limit: int = 10,
+        result_type: str = "tracks",
+    ):
+        """
+        Searches Spotify.
+
+        Args:
+            query (str): The user query.
+            authentication (spotipy.Spotify): A Spotify client.
+            limit (int): Amount of results to show. Defaults to 10
+            result_type (str): The type of results that should be returned. Defaults to 'tracks'.
+
+        Returns:
+            dict: Returns search results as a dictionary.
+        """
+
+        self.validate_time_range_and_limit(limit=limit)
+        limit = limit if limit is not None else 10
+
+        if result_type == "artist":
+            result = authentication.search(query, type="artist", limit=limit)
+        elif result_type == "track":
+            result = authentication.search(query, type="track", limit=limit)
+        return result
 
 
-# Initialization
+# Load environment variables from .env
 load_dotenv()
-# logging.basicConfig(level=logging.DEBUG)
+
+# Rich
+console = Console(highlight=False)
+
+# Typer
 app = typer.Typer()
+state = {"verbose": False}
+
+# Client initialization and authentication.
 client = SpotifyClient()
 
 
-# Typer commands
-@app.command()
-def get_user():
+# Logging
+@app.callback(help="Spotify CLI App")
+def debugging(verbose: bool = False):
     """
-    Get information on the current user.
+    Enable/disable verbose logging.
+
+    Args:
+        verbose (bool, optional): Specifies if the user wants to show debugging messages. Defaults to False.
     """
-    return client.current_user_information()
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG, handlers=[RichHandler()])
+    else:
+        logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
 
 
+# Typer commands.
+# Wrapper functions that call class methods.
 @app.command()
-def get_top_tracks(
+def get_top_songs(
     time_range: Annotated[
         str,
         typer.Option(
@@ -176,18 +360,18 @@ def get_top_tracks(
         ),
     ] = "medium_term",
     limit: Annotated[
-        int, typer.Option(default=20, help="The amount of songs shown. Limit 50")
+        int, typer.Option(default=20, help="The amount of results shown. Limit of 50")
     ] = 20,
 ):
     """
-    Get the current user's top tracks.
+    Gets the current user's top songs.
 
-    Takes arguments time_range (default "medium_term") and limit (default 20).
+    Args:
+        time_range (str): Time range of results. Defaults to "medium_term".
+        limit (int): The amount of results shown. Defaults to DEFAULT_RESULT_LIMIT.
 
-    Term accepts three inputs
-        short_term (past month)
-        medium_term (six months)
-        long_term (all time)
+    Returns:
+        list: Returns a list of the user's top tracks in a given time_range.
     """
     return client.current_user_top_tracks(time_range, limit)
 
@@ -202,20 +386,74 @@ def get_top_artists(
         ),
     ] = "medium_term",
     limit: Annotated[
-        int, typer.Option(default=20, help="The amount of songs shown. Limit 50")
+        int, typer.Option(default=20, help="The amount of results shown. Limit of 50")
     ] = 20,
 ):
     """
-    Get the current user's top artists.
+    Get the users top artists.
 
-    Takes arguments time_range (default "medium_term") and limit (default 20).
+    Args:
+        time_range (str, optional): Time range of results. Defaults to "medium_term".
+        limit (int, optional): The amount of results shown. Defaults to DEFAULT_RESULT_LIMIT.
 
-    Term accepts three inputs
-        short_term (past month)
-        medium_term (six months)
-        long_term (all time)
+    Returns:
+        list: Returns a list of the user's top artists in a given time_range.
     """
     return client.current_user_top_artists(time_range, limit)
+
+
+@app.command()
+def search(
+    artist: Annotated[
+        str, typer.Option(default=None, help="Artist to search for.")
+    ] = None,
+    track: Annotated[
+        str, typer.Option(default=None, help="Track to search for.")
+    ] = None,
+    limit: Annotated[
+        int, typer.Option(default=10, help="Amount of results to output.")
+    ] = 10,
+):
+    """
+    Searches Spotify for artists or tracks.
+
+    Args:
+        artist (str, optional): Artist to search for. Defaults to None.
+        track (str, optional): Track to search for. Defaults to None.
+        limit (int, optional): The amount of results shown. Defaults to 10.
+    """
+    auth = client.authenticate()
+
+    if track:
+        results = client.search_spotify(
+            query=track, authentication=auth, result_type="track", limit=limit
+        )
+        console.print(f'Results for: "[bold green][i]{track}[/i][/bold green]":\n', justify="center")
+        for idx, result in enumerate(results["tracks"]["items"]):
+            artist_name = result["album"]["artists"][0]["name"]
+            track_name = result["name"]
+            console.print(
+                f"[bold green]{idx+1}[/bold green] - {track_name} by {artist_name}",
+                justify="center",
+            )
+    elif artist:
+        results = client.search_spotify(
+            query=artist, authentication=auth, result_type="artist", limit=limit
+        )
+        console.print(f'Results for "[bold green][i]{artist}[/i][/bold green]":\n', justify="center")
+        for idx, result in enumerate(results["artists"]["items"]):
+            artist_name = result["name"]
+            genres = result["genres"]
+            if genres != []:
+                console.print(
+                    f"[bold green]{idx+1}[/bold green] - {artist_name} - {", ".join(genres)}",
+                    justify="center",
+                )
+            else:
+                console.print(
+                    f"[bold green]{idx+1}[/bold green] - {artist_name} - no genre(s) found",
+                    justify="center",
+                )
 
 
 if __name__ == "__main__":
