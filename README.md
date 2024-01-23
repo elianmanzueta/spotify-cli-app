@@ -62,7 +62,7 @@ Options include:
 
 `python main.py search --artist "Weezer"`
 
-![Search Artists](images/Search%20-%20Tracks.png)
+![Search Artists](images/Search%20-%20Artists.png)
 
 #### Search for Tracks
 
