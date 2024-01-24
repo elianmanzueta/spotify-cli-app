@@ -1,19 +1,22 @@
 # Spotify CLI App
 
 ## Overview
+
 This app is a Python-based command-line interface that allows users to interact with the Spotify Web API. It enables you to retrieve your top songs and artists, and search for tracks and artists on Spotify.
 
 ## Features
+
 - **Get Top Songs and Artists**: Easily access your favorite songs and artists based on your Spotify listening history. Similar to projects like Receiptify.
 - **Search Functionality**: Search for tracks and artists directly from the command line.
 
 ## Installation
+
 1. Clone the repository:
 
    ```git clone https://github.com/elianmanzueta/spotify-cli-app.git```
 
 2. Navigate to the app directory:
-    
+
     `cd spotify-cli-app`
 
 3. Install dependencies:
@@ -29,12 +32,13 @@ This app is a Python-based command-line interface that allows users to interact 
 `python main.py get-top-songs`
 
 Options include:
-- Limit 
+
+- Limit
 - Time range
 
 ![Top Songs](images/Top%20Songs.png)
 
-#### With options
+#### Get top songs with options
 
 `python main.py get-top-songs --limit 5 --time-range short_term`
 
@@ -45,18 +49,19 @@ Options include:
 `python main.py get-top-artists`
 
 Options include:
+
 - Limit
 - Time range
 
 ![Top Artists](images/Top%20Artists.png)
 
-#### With options
+#### Get top artists with options
 
 `python main.py get-top-artists --limit 6 --time-range long_term`
 
 ![Top Artists With Options](images/Top%20Artists%20with%20Options.png)
 
-### Search 
+### Search
 
 #### Search for Artists
 
