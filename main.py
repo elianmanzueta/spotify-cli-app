@@ -227,7 +227,7 @@ class SpotifyClient:
         )
 
         # User output
-        self.top_prompt(time_range, "songs")
+        self.top_prompt(time_range, "tracks")
         for idx, track in enumerate(tracklist):
             console.print(
                 f"{track} ({track_duration_in_minutes[idx]})", justify="center"
@@ -354,7 +354,7 @@ def main(verbose: bool = False):
 # Typer commands.
 # Wrapper functions that call class methods.
 @app.command()
-def get_top_songs(
+def get_top_tracks(
     time_range: Annotated[
         str,
         typer.Option(
@@ -367,7 +367,7 @@ def get_top_songs(
     ] = 20,
 ):
     """
-    Gets the current user's top songs.
+    Gets the current user's top tracks.
 
     Args:
         time_range (str): Time range of results. Defaults to "medium_term".

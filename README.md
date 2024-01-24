@@ -27,9 +27,9 @@ This app is a Python-based command-line interface that allows users to interact 
 
 ![Help](images/Help%20page.png)
 
-### Get your top songs
+### Get your top tracks
 
-`python main.py get-top-songs`
+`python main.py get-top-tracks`
 
 Options include:
 
@@ -38,9 +38,9 @@ Options include:
 
 ![Top Songs](images/Top%20Songs.png)
 
-#### Get top songs with options
+#### Get top tracks with options
 
-`python main.py get-top-songs --limit 5 --time-range short_term`
+`python main.py get-top-tracks --limit 5 --time-range short_term`
 
 ![Top Songs With Options](images/Top%20Songs%20with%20Options.png)
 
