@@ -50,7 +50,8 @@ class SpotifyClient:
 
         # User authentication
         if scope:
-            if self._user_scope != scope:
+            if self._user_session is None or self._user_scope != scope:
+                # Create a new session if one doesn't exist, or if the scope changes.
                 self._user_session = spotipy.Spotify(
                     auth_manager=SpotifyOAuth(
                         client_id=self.client_id,
@@ -64,6 +65,7 @@ class SpotifyClient:
 
         # Client credential authentication
         if self._client_session is None:
+            # Create a new session if one doesn't exist.
             client_credentials_manager = SpotifyClientCredentials(
                 client_id=self.client_id, client_secret=self.client_secret
             )
