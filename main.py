@@ -129,7 +129,7 @@ class SpotifyClient:
                 justify="center",
             )
 
-    def get_track_duration(
+    def fetch_track_duration(
         self, authentication: spotipy.Spotify, track_uris: list
     ) -> list:
         """
@@ -221,7 +221,7 @@ class SpotifyClient:
             )
 
         # Get track duration
-        track_durations_in_ms = self.get_track_duration(session, track_uri_list)
+        track_durations_in_ms = self.fetch_track_duration(session, track_uri_list)
         track_duration_in_minutes = self.ms_to_minutes_and_seconds(
             track_durations_in_ms
         )
@@ -302,7 +302,7 @@ class SpotifyClient:
         Args:
             query (str): The user query.
             authentication (spotipy.Spotify): A Spotify client.
-            limit (int): Amount of results to show. Defaults to 10
+            limit (int): The amount of results shown. Defaults to 10.
             result_type (str): The type of results that should be returned. Defaults to 'tracks'.
 
         Returns:
@@ -334,13 +334,16 @@ client = SpotifyClient()
 
 
 # Logging
-@app.callback(help="Spotify CLI App")
-def debugging(verbose: bool = False):
+@app.callback()
+def main(verbose: bool = False):
     """
-    Enable/disable verbose logging.
+    Spotify CLI App: Interact with the Spotify Web API.
 
-    Args:
-        verbose (bool, optional): Specifies if the user wants to show debugging messages. Defaults to False.
+    This application allows users to access their Spotify data, including top tracks, top artists, and search functionality, directly from the command line. It leverages the Spotify Web API to fetch and display user-specific information based on the provided commands.\n\n\n
+
+    Each command supports various options to customize the output, such as time range and result limits. Use --help with any command to see its specific options.\n\n\n
+
+    Enable verbose mode to see detailed logging output.
     """
     if verbose:
         logging.basicConfig(level=logging.DEBUG, handlers=[RichHandler()])
@@ -428,7 +431,10 @@ def search(
         results = client.search_spotify(
             query=track, authentication=auth, result_type="track", limit=limit
         )
-        console.print(f'Results for: "[bold green][i]{track}[/i][/bold green]":\n', justify="center")
+        console.print(
+            f'Results for: "[bold green][i]{track}[/i][/bold green]":\n',
+            justify="center",
+        )
         for idx, result in enumerate(results["tracks"]["items"]):
             artist_name = result["album"]["artists"][0]["name"]
             track_name = result["name"]
@@ -440,7 +446,10 @@ def search(
         results = client.search_spotify(
             query=artist, authentication=auth, result_type="artist", limit=limit
         )
-        console.print(f'Results for "[bold green][i]{artist}[/i][/bold green]":\n', justify="center")
+        console.print(
+            f'Results for "[bold green][i]{artist}[/i][/bold green]":\n',
+            justify="center",
+        )
         for idx, result in enumerate(results["artists"]["items"]):
             artist_name = result["name"]
             genres = result["genres"]
