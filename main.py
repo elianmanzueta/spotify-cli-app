@@ -29,6 +29,7 @@ class SpotifyClient:
         self.client_id = os.getenv("CLIENT_ID")
         self.client_secret = os.getenv("CLIENT_SECRET")
         self.redirect_uri = os.getenv("REDIRECT_URI")
+        self._display_name = None
         self._user_scope = None
         self._user_session = None
         self._client_session = None
@@ -46,8 +47,9 @@ class SpotifyClient:
         Returns:
             spotipy.Spotify: A Spotify client.
         """
+
+        # User authentication
         if scope:
-            # User authentication
             if self._user_scope != scope:
                 self._user_session = spotipy.Spotify(
                     auth_manager=SpotifyOAuth(
@@ -59,6 +61,7 @@ class SpotifyClient:
                 )
                 self._user_scope = scope
             return self._user_session
+
         # Client credential authentication
         if self._client_session is None:
             client_credentials_manager = SpotifyClientCredentials(
@@ -69,7 +72,8 @@ class SpotifyClient:
             )
         return self._client_session
 
-    def validate_time_range_and_limit(self, time_range: str = None, limit: int = None):
+    @staticmethod
+    def validate_time_range_and_limit(time_range: str = None, limit: int = None):
         """
         Validates the user's input for time_range and limit.
 
@@ -82,13 +86,13 @@ class SpotifyClient:
             ValueError: If limit is not valid.
         """
 
-        if time_range is not None and time_range not in self.VALID_TIME_RANGES:
+        if time_range is not None and time_range not in SpotifyClient.VALID_TIME_RANGES:
             raise ValueError(
-                f"Invalid time range: {time_range}. Valid options: {', '.join(self.VALID_TIME_RANGES)}"
+                f"Invalid time range: {time_range}. Valid options: {', '.join(SpotifyClient.VALID_TIME_RANGES)}"
             )
-        if limit is not None and (limit > self.MAX_RESULT_LIMIT or limit <= 0):
+        if limit is not None and (limit > SpotifyClient.MAX_RESULT_LIMIT or limit <= 0):
             raise ValueError(
-                f"Invalid limit {limit}. Limit must be between 1 and {self.MAX_RESULT_LIMIT} "
+                f"Invalid limit {limit}. Limit must be between 1 and {SpotifyClient.MAX_RESULT_LIMIT} "
             )
 
     def current_user_display_name(self) -> str:
@@ -97,10 +101,12 @@ class SpotifyClient:
         """
 
         scope = "user-top-read"
-
-        session = self.authenticate(scope)
-        user = session.current_user()
-        return user["display_name"]
+        if self._display_name is None:
+            session = self.authenticate(scope)
+            user = session.current_user()
+            self._display_name = user["display_name"]
+            return self._display_name
+        return self._display_name
 
     def top_prompt(self, time_range: str, prompt_type: str):
         """
@@ -190,7 +196,7 @@ class SpotifyClient:
             list: Returns a list of the user's top tracks.
         """
 
-        self.validate_time_range_and_limit(time_range, limit)
+        SpotifyClient.validate_time_range_and_limit(time_range, limit)
 
         # Use class defaults if no value is provided
         time_range = time_range if time_range is not None else self.DEFAULT_TIME_RANGE
@@ -250,7 +256,7 @@ class SpotifyClient:
             list: Returns a lists of artists and their associated genres.
         """
 
-        self.validate_time_range_and_limit(time_range, limit)
+        SpotifyClient.validate_time_range_and_limit(time_range, limit)
 
         # Use class defaults if no value is provided
         time_range = time_range if time_range is not None else self.DEFAULT_TIME_RANGE
@@ -309,7 +315,8 @@ class SpotifyClient:
             dict: Returns search results as a dictionary.
         """
 
-        self.validate_time_range_and_limit(limit=limit)
+        SpotifyClient.validate_time_range_and_limit(limit=limit)
+
         limit = limit if limit is not None else 10
 
         if result_type == "artist":
