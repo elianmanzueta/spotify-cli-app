@@ -1,6 +1,7 @@
 """Spotify CLI App"""
 import os
 import logging
+import json
 from typing_extensions import Annotated
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -10,7 +11,6 @@ from dotenv import load_dotenv
 import typer
 from rich.console import Console
 from rich.logging import RichHandler
-
 
 class SpotifyClient:
     """
@@ -241,6 +241,7 @@ class SpotifyClient:
             console.print(
                 f"{track} ({track_duration_in_minutes[idx]})", justify="center"
             )
+        return tracklist
 
     def current_user_top_artists(
         self, time_range: str = None, limit: int = None
@@ -324,8 +325,10 @@ class SpotifyClient:
 
         if result_type == "artist":
             result = authentication.search(query, type="artist", limit=limit)
+            print(json.dumps(result, indent=4))
         elif result_type == "track":
             result = authentication.search(query, type="track", limit=limit)
+            print(json.dumps(result, indent=4))
         return result
 
 
@@ -442,7 +445,7 @@ def search(
             query=track, authentication=auth, result_type="track", limit=limit
         )
         console.print(
-            f'Results for: "[bold green][i]{track}[/i][/bold green]":\n',
+            f'Results for "[bold green][i]{track}[/i][/bold green]":\n',
             justify="center",
         )
         for idx, result in enumerate(results["tracks"]["items"]):
