@@ -158,7 +158,8 @@ class SpotifyClient:
             track_duration_list.append(track["duration_ms"])
         return track_duration_list
 
-    def ms_to_minutes_and_seconds(self, track_durations: list):
+    @staticmethod
+    def ms_to_minutes_and_seconds(track_durations: list):
         """
         Used to convert a given track's duration (ms) to format seconds:minutes.
 
@@ -230,7 +231,7 @@ class SpotifyClient:
 
         # Get track duration
         track_durations_in_ms = self.fetch_track_duration(session, track_uri_list)
-        track_duration_in_minutes = self.ms_to_minutes_and_seconds(
+        track_duration_in_minutes = SpotifyClient.ms_to_minutes_and_seconds(
             track_durations_in_ms
         )
 
