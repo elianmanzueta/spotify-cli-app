@@ -1,5 +1,7 @@
 # Spotify CLI App
 
+[![CodeFactor](https://www.codefactor.io/repository/github/elianmanzueta/spotify-cli-app/badge/main)](https://www.codefactor.io/repository/github/elianmanzueta/spotify-cli-app/overview/main) [![Maintainability](https://api.codeclimate.com/v1/badges/4146453dcc13ff14ea59/maintainability)](https://codeclimate.com/github/elianmanzueta/spotify-cli-app/maintainability)![example workflow](https://github.com/elianmanzueta/spotify-cli-app/actions/workflows/workflow.yml/badge.svg)
+
 ## Overview
 
 This app is a Python-based command-line interface that allows users to interact with the Spotify Web API. It enables you to retrieve your top songs and artists, and search for tracks and artists on Spotify.
