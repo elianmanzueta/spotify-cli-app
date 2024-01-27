@@ -31,6 +31,7 @@ pycparser==2.21
 Pygments==2.17.2
 pyproject_hooks==1.0.0
 pytest==7.4.4
+pytest-mock==3.12.0
 python-dotenv==1.0.0
 rapidfuzz==3.6.1
 redis==5.0.1

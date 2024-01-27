@@ -363,7 +363,6 @@ def main(verbose: bool = False):
     else:
         logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
 
-
 # Typer commands.
 # Wrapper functions that call class methods.
 @app.command()
@@ -477,6 +476,6 @@ def search(
                     justify="center",
                 )
 
-
 if __name__ == "__main__":
     app()
+    
