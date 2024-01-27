@@ -13,6 +13,8 @@ This app is a Python-based command-line interface that allows users to interact 
 
 ## Installation
 
+Requires Python >= 3.12
+
 1. Clone the repository:
 
    ```git clone https://github.com/elianmanzueta/spotify-cli-app.git```
