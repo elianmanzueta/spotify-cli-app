@@ -29,7 +29,7 @@ This app is a Python-based command-line interface that allows users to interact 
 
 ### Get your top tracks
 
-`python spotify_cli.py get-top-tracks`
+`python src/spotify_cli.py get-top-tracks`
 
 Options include:
 
@@ -40,13 +40,13 @@ Options include:
 
 #### Get top tracks with options
 
-`python spotify_cli.py get-top-tracks --limit 5 --time-range short_term`
+`python src/spotify_cli.py get-top-tracks --limit 5 --time-range short_term`
 
 ![Top Songs With Options](images/Top%20Songs%20with%20Options.png)
 
 ### Get your top artists
 
-`python spotify_cli.py get-top-artists`
+`python src/spotify_cli.py get-top-artists`
 
 Options include:
 
@@ -57,7 +57,7 @@ Options include:
 
 #### Get top artists with options
 
-`python spotify_cli.py get-top-artists --limit 6 --time-range long_term`
+`python src/spotify_cli.py get-top-artists --limit 6 --time-range long_term`
 
 ![Top Artists With Options](images/Top%20Artists%20with%20Options.png)
 
@@ -65,13 +65,13 @@ Options include:
 
 #### Search for Artists
 
-`python spotify_cli.py search --artist "Weezer"`
+`python src/spotify_cli.py search --artist "Weezer"`
 
 ![Search Artists](images/Search%20-%20Artists.png)
 
 #### Search for Tracks
 
-`python spotify_cli.py search --track "Buddy Holly"`
+`python src/spotify_cli.py search --track "Buddy Holly"`
 
 ![Search Tracks](images/Search%20-%20Tracks.png)
 
