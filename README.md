@@ -83,9 +83,11 @@ Options include:
 
 Before using the app, you'll need to set up your Spotify API credentials.
 
-Create a [Spotify Developer](https://developer.spotify.com) account and create a new application.
+Create a [Spotify Developer](https://developer.spotify.com) account and create a new application. 
 
-Add your Client ID and Client Secret to a .env file in the project root.
+Go to your app's settings and get the Client ID, Client Secret, and Redirect URI.
+
+Add your Client ID, Client Secret, and Redirect URI to a .env file in the project root.
 
 ## License
 
