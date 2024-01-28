@@ -490,7 +490,7 @@ def search(
             # Checking if a given artist has any genres.
             if genres != []:
                 console.print(
-                    f"[bold green]{idx+1}[/bold green] - {artist_name} - {", ".join(genres)}",
+                    f"[bold green]{idx+1}[/bold green] - {artist_name} - {', '.join(genres)}",
                     justify="center",
                 )
 
