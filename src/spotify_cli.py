@@ -12,6 +12,7 @@ import typer
 from rich.console import Console
 from rich.logging import RichHandler
 
+
 class SpotifyClient:
     """
     A wrapper class for interacting with the Spotify Web API using Spotipy.
@@ -103,13 +104,13 @@ class SpotifyClient:
         """
 
         scope = "user-top-read"
-        
+
         if self._display_name is None:
             session = self.authenticate(scope)
             user = session.current_user()
             self._display_name = user["display_name"]
             return self._display_name
-        
+
         return self._display_name
 
     def top_prompt(self, time_range: str, prompt_type: str):
@@ -128,13 +129,13 @@ class SpotifyClient:
                 f"[i]Displaying [bold green]{display_name}'s[/bold green] top {prompt_type} in the last month!\n[/i]",
                 justify="center",
             )
-            
+
         elif time_range == "medium_term":
             console.print(
                 f"[i]Displaying [bold green]{display_name}'s[/bold green] top {prompt_type} in the last six months!\n[/i]",
                 justify="center",
             )
-            
+
         elif time_range == "long_term":
             console.print(
                 f"[i]Displaying [bold green]{display_name}'s[/bold green] top {prompt_type} of all time!\n[/i]",
@@ -160,7 +161,7 @@ class SpotifyClient:
 
         for track in tracks["tracks"]:
             track_duration_list.append(track["duration_ms"])
-            
+
         return track_duration_list
 
     @staticmethod
@@ -224,8 +225,8 @@ class SpotifyClient:
 
         track_uri_list = []
         tracklist = []
-        
-         # Iterate through "items" to extract the song name and artist name.
+
+        # Iterate through "items" to extract the song name and artist name.
         for idx, track in enumerate(top_tracks["items"]):
             track_name = track.get("name")
             track_uri = track.get("uri")
@@ -246,7 +247,7 @@ class SpotifyClient:
             console.print(
                 f"{track} ({track_duration_in_minutes[idx]})", justify="center"
             )
-            
+
         return tracklist
 
     def current_user_top_artists(
@@ -291,21 +292,21 @@ class SpotifyClient:
         for idx, artist in enumerate(top_artists["items"]):
             artist_name = artist.get("name", "Unknown Artist")
             artist_genres = artist.get("genres", "Unknown Genre")
-            
+
             if artist_genres:
                 genres = ", ".join(str(x) for x in artist_genres)
-                
+
             else:
-                # Handling if no genres are found for an artist. 
+                # Handling if no genres are found for an artist.
                 genres = "No genres found"
-                
+
             artistlist.append(
                 f"[bold green]{idx+1}[/bold green] - {artist_name} - {genres}"
             )
-             
-        for artist in artistlist: 
-            console.print(artist, justify='center')
-            
+
+        for artist in artistlist:
+            console.print(artist, justify="center")
+
         # Returns a list of found artists.
         return artistlist
 
@@ -335,10 +336,8 @@ class SpotifyClient:
 
         if result_type == "artist":
             result = authentication.search(query, type="artist", limit=limit)
-            print(json.dumps(result, indent=4))
         elif result_type == "track":
             result = authentication.search(query, type="track", limit=limit)
-            print(json.dumps(result, indent=4))
         return result
 
 
@@ -372,6 +371,7 @@ def main(verbose: bool = False):
         logging.basicConfig(level=logging.DEBUG, handlers=[RichHandler()])
     else:
         logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
+
 
 # Typer commands.
 # Wrapper functions that call class methods.
@@ -458,7 +458,7 @@ def search(
             f'Results for "[bold green][i]{track}[/i][/bold green]":\n',
             justify="center",
         )
-        
+
         for idx, result in enumerate(results["tracks"]["items"]):
             try:
                 artist_name = result["album"]["artists"][0]["name"]
@@ -466,23 +466,23 @@ def search(
             except (KeyError, IndexError, TypeError):
                 artist_name = None
                 track_name = None
-                
+
             console.print(
                 f"[bold green]{idx+1}[/bold green] - {track_name} by {artist_name}",
                 justify="center",
             )
-            
+
     # If artist option is set.
     elif artist:
         results = client.search_spotify(
             query=artist, authentication=auth, result_type="artist", limit=limit
         )
-        
+
         console.print(
             f'Results for "[bold green][i]{artist}[/i][/bold green]":\n',
             justify="center",
         )
-        
+
         for idx, result in enumerate(results["artists"]["items"]):
             artist_name = result["name"]
             genres = result["genres"]
@@ -493,12 +493,12 @@ def search(
                     f"[bold green]{idx+1}[/bold green] - {artist_name} - {", ".join(genres)}",
                     justify="center",
                 )
-                
+
             console.print(
                 f"[bold green]{idx+1}[/bold green] - {artist_name} - no genre(s) found",
                 justify="center",
             )
 
+
 if __name__ == "__main__":
     app()
-    
