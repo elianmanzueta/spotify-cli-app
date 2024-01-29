@@ -1,7 +1,7 @@
 """Spotify CLI App"""
 import os
 import logging
-import json
+# import json
 from typing_extensions import Annotated
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -361,7 +361,9 @@ def main(verbose: bool = False):
     """
     Spotify CLI App: Interact with the Spotify Web API.
 
-    This application allows users to access their Spotify data, including top tracks, top artists, and search functionality, directly from the command line. It leverages the Spotify Web API to fetch and display user-specific information based on the provided commands.\n\n\n
+    This application allows users to access their Spotify data, including top tracks, top artists, and search functionality, directly from the command line.\n\n\n
+    
+    It leverages the Spotify Web API to fetch and display user-specific information based on the provided commands.\n\n\n
 
     Each command supports various options to customize the output, such as time range and result limits. Use --help with any command to see its specific options.\n\n\n
 
