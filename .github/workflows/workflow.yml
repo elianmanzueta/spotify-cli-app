@@ -39,5 +39,8 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
+      env:
+        spotipy_client_id: ${{ secrets.SPOTIPY_CLIENT_ID }}
+        spotipy_client_secret: ${{ secrets.SPOTIPY_CLIENT_SECRET }}
       run: |
         pytest -v
