@@ -17,15 +17,15 @@ Requires Python >= 3.12
 
 1. Clone the repository:
 
-   ```git clone https://github.com/elianmanzueta/spotify-cli-app.git```
+   `git clone https://github.com/elianmanzueta/spotify-cli-app.git`
 
 2. Navigate to the app directory:
 
-    `cd spotify-cli-app`
+   `cd spotify-cli-app`
 
 3. Install dependencies:
 
-    `pip install -r requirements.txt`
+   `pip install -r requirements.txt`
 
 ## Usage
 
@@ -33,7 +33,7 @@ Requires Python >= 3.12
 
 ### Get your top tracks
 
-`python src/spotify_cli.py get-top-tracks`
+`python main.py get-top-tracks`
 
 Options include:
 
@@ -44,13 +44,13 @@ Options include:
 
 #### Get top tracks with options
 
-`python src/spotify_cli.py get-top-tracks --limit 5 --time-range short_term`
+`python main.py get-top-tracks --limit 5 --time-range short_term`
 
 ![Top Songs With Options](images/Top%20Songs%20with%20Options.png)
 
 ### Get your top artists
 
-`python src/spotify_cli.py get-top-artists`
+`python main.py get-top-artists`
 
 Options include:
 
@@ -61,7 +61,7 @@ Options include:
 
 #### Get top artists with options
 
-`python src/spotify_cli.py get-top-artists --limit 6 --time-range long_term`
+`python main.py get-top-artists --limit 6 --time-range long_term`
 
 ![Top Artists With Options](images/Top%20Artists%20with%20Options.png)
 
@@ -69,13 +69,13 @@ Options include:
 
 #### Search for Artists
 
-`python src/spotify_cli.py search --artist "Weezer"`
+`python main.py search --artist "Weezer"`
 
 ![Search Artists](images/Search%20-%20Artists.png)
 
 #### Search for Tracks
 
-`python src/spotify_cli.py search --track "Buddy Holly"`
+`python main.py search --track "Buddy Holly"`
 
 ![Search Tracks](images/Search%20-%20Tracks.png)
 

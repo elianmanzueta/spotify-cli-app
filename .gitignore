@@ -171,3 +171,4 @@ cython_debug/
 
 # pyenv
 .python-version
+pyrightconfig.json

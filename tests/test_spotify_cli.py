@@ -1,11 +1,19 @@
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import logging
 import re
 from typing import Any, Callable, Generator, Literal
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
 from pytest_mock import MockerFixture
 from typer.testing import CliRunner
-from src.spotify_cli import app, SpotifyClient
+
+from main import app
+from src.spotify_cli import SpotifyClient
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -212,7 +220,9 @@ def test_ms_to_minutes_and_seconds():
     "limit, expected",
     [(None, sample_data["top_tracks"]), (1, sample_data["top_tracks"][:1])],
 )
-def test_current_user_top_tracks_tracklist(mock_spotify_client: SpotifyClient, limit: Literal[1] | None, expected: Any):
+def test_current_user_top_tracks_tracklist(
+    mock_spotify_client: SpotifyClient, limit: Literal[1] | None, expected: Any
+):
     result = mock_spotify_client.current_user_top_tracks(limit=limit)
     assert result == expected
 
@@ -227,12 +237,12 @@ def test_current_user_top_artists_artistlist(
     result = mock_spotify_client.current_user_top_artists(limit=limit)
     assert result == expected
 
-      
+
 # Typer command tests
 
 
 def test_get_top_tracks_command(mock_spotify_client: SpotifyClient):
-    with patch("src.spotify_cli.client", mock_spotify_client):
+    with patch("src.spotify_cli.SpotifyClient", mock_spotify_client):
         result = runner.invoke(
             app,
             "get-top-tracks",
@@ -241,13 +251,13 @@ def test_get_top_tracks_command(mock_spotify_client: SpotifyClient):
 
 
 def test_get_top_artists_command(mock_spotify_client: SpotifyClient):
-    with patch("src.spotify_cli.client", mock_spotify_client):
+    with patch("src.spotify_cli.SpotifyClient", mock_spotify_client):
         result = runner.invoke(app, "get-top-artists")
         assert result.exit_code == 0
 
 
 def test_search_tracks_command(mock_spotify_client: SpotifyClient):
-    with patch("src.spotify_cli.client", mock_spotify_client):
+    with patch("src.spotify_cli.SpotifyClient", mock_spotify_client):
         track_name = "Buddy Holly"
         artist_name = "Weezer"
         result = runner.invoke(app, ["search", "--track", track_name])
@@ -258,7 +268,7 @@ def test_search_tracks_command(mock_spotify_client: SpotifyClient):
 
 
 def test_search_artists_command(mock_spotify_client: SpotifyClient):
-    with patch("src.spotify_cli.client", mock_spotify_client):
+    with patch("src.spotify_cli.SpotifyClient", mock_spotify_client):
         artist_name = "Weezer"
         result = runner.invoke(app, ["search", "--artist", artist_name])
 
